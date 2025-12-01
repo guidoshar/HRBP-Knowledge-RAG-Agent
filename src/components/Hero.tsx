@@ -52,7 +52,7 @@ export default function Hero() {
       <BackgroundEffects />
 
       {/* 主内容区 */}
-      <div className="relative z-10 w-full max-w-5xl mx-auto">
+      <div className="relative z-10 w-full max-w-5xl mx-auto pt-20">
         <AnimatePresence mode="wait">
           {!hasMessages ? (
             // 初始状态：标题 + 输入框 + 快捷示例
@@ -70,16 +70,6 @@ export default function Hero() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
               >
-                <motion.div
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-6"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-sm text-gray-300">AI 智能物流追踪系统 v2.0</span>
-                </motion.div>
-
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
                   <span className="text-white">MOOV AI</span>
                   <br />
@@ -124,9 +114,6 @@ export default function Hero() {
 
               {/* 快捷示例 */}
               <QuickExamples onSelect={handleQuery} />
-
-              {/* 滚动提示 */}
-              <ScrollHint />
             </motion.div>
           ) : (
             // 对话状态
@@ -174,6 +161,9 @@ export default function Hero() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* 滚动提示 - 仅在初始状态显示 */}
+      {!hasMessages && <ScrollHint />}
     </section>
   );
 }
