@@ -1,0 +1,27 @@
+（必选）基于 PO 号获取全量信息
+“给定采购订单编号（如 ORD00000761_03），返回订单头表、承运预订以及所有 order_details（含每个 tab 的 JSON 数据）等所有能查到的字段。”
+（必选）基于客户/供应商名称获取所有 PO 及关键指标
+“查询 RIPON KNITWEAR LTD. 供应商的所有 PO：列出订单号、最新状态、进度、关键日期，并统计低进度/延期订单数量。”
+上海发往欧洲的货物明细
+“筛选起运港包含 ‘Shanghai’ 且目的国属于欧洲（如 UK、Germany、France 等）的所有订单，输出起运港、目的港、最新事件、预计到港时间，并按 hod_date 排序。”
+本月预计到港的订单监控
+“查询当前月份内预计到港（booked_eta） 的订单，返回订单号、承运商、ETA、进度，并统计按承运商的数量分布。”
+质检阶段异常监控
+“找出 pending_status = 'Quality Inspection' 且 process_percent < 30% 的订单，列出 PO 号、供应商、质检起始时间、最近事件，方便质检团队跟进。”
+承运商运输绩效分析
+“按承运商统计：订单数量、平均运输时长（ETA-ETD）、发货率（atd 是否存在）、最短/最长运输天数，挑出表现最好的前 3 名。”
+异常时间差排查
+“列出 booked_eta < booked_etd 的异常记录，展示运输参考号、承运商、ETD/ETA、订单号，并标记为数据质量问题。”
+多段运输路径洞察（基于 Location JSON）
+“解析 order_details→tab_name='Location' 的 legs 数组，展示每个订单的跨节点时间轴（Factory→Port→Vessel…），找出当前停留时间最长的节点。”
+高风险订单识别
+“筛选 hod_date 已过但 process_percent < 80% 的订单，按供应商分组输出订单数量、平均滞后天数，以及需要优先处理的 top 5 订单。”
+订单文档合规性检查
+“针对每个 PO，检查 Documents tab 是否包含 Commercial Invoice、Packing List、Bill of Lading 等必要文件，列出缺失项和上传时间。”
+这 10 个题目覆盖了：
+单 PO 深入查询
+按供应商聚合分析
+JSON 字段解析
+日期/状态异常检测
+承运商绩效评估
+文档/质检等业务场景

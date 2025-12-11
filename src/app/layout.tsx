@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import '@/styles/globals.css';
+import DifyChatBubble from '@/components/DifyChatBubble';
+import MooVChatWidget from '@/components/MooVChatWidget';
 
 export const metadata: Metadata = {
   title: 'MOOV AI - 智能物流查询系统',
@@ -22,7 +24,11 @@ export default function RootLayout({
           rel="stylesheet" 
         />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <DifyChatBubble />
+        <MooVChatWidget />
+      </body>
     </html>
   );
 }

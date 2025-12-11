@@ -1,0 +1,216 @@
+【命令 1】🚨 陷阱题：查询不存在的订单（AI 应该返回"未找到"）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PGPASSWORD=postgres123 psql -h 121.43.124.134 -p 5432 -U logistics -d logistics -c "
+SELECT order_number, supplier_name, process_percent 
+FROM orders 
+WHERE order_number = 'ORD00009999_99';
+"
+
+期望结果：(0 rows)
+
+
+【命令 2】📊 统计 BANGLADESH APPAREL GROUP 供应商
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PGPASSWORD=postgres123 psql -h 121.43.124.134 -p 5432 -U logistics -d logistics -c "
+SELECT 
+  COUNT(*) AS total_orders,
+  ROUND(AVG(process_percent), 2) AS avg_progress,
+  COUNT(CASE WHEN process_percent < 30 THEN 1 END) AS low_progress_orders,
+  COUNT(CASE WHEN process_percent > 80 THEN 1 END) AS high_progress_orders
+FROM orders
+WHERE supplier_name = 'BANGLADESH APPAREL GROUP';
+"
+
+期望结果：
+total_orders | avg_progress | low_progress_orders | high_progress_orders
+---------------------------------------------------------------------------
+         130 |        50.46 |                  28 |                   19
+
+
+【命令 3】🔥 关键测试：RIPON KNITWEAR LTD. 订单总数（必须是 57 条）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PGPASSWORD=postgres123 psql -h 121.43.124.134 -p 5432 -U logistics -d logistics -c "
+SELECT COUNT(*) AS total_orders FROM orders WHERE supplier_name = 'RIPON KNITWEAR LTD.';
+"
+
+期望结果：57
+
+
+【命令 4】📋 展示 RIPON KNITWEAR LTD. 的订单号（应该不连续）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PGPASSWORD=postgres123 psql -h 121.43.124.134 -p 5432 -U logistics -d logistics -c "
+SELECT order_number, process_percent 
+FROM orders 
+WHERE supplier_name = 'RIPON KNITWEAR LTD.' 
+ORDER BY order_number 
+LIMIT 10;
+"
+
+期望结果：订单号应该是 ORD00000013_02, ORD00000020_03, ORD00000024_01...（不连续）
+
+
+【命令 5】📦 查询真实订单 ORD00000082_02 的完整信息
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PGPASSWORD=postgres123 psql -h 121.43.124.134 -p 5432 -U logistics -d logistics -c "
+SELECT 
+  o.order_number,
+  o.supplier_name,
+  o.pending_status,
+  o.process_percent,
+  o.hod_date,
+  cb.carrier,
+  cb.booked_eta
+FROM orders o
+LEFT JOIN carrier_bookings cb ON o.id = cb.order_id
+WHERE o.order_number = 'ORD00000082_02';
+"
+
+期望结果：供应商 = RIPON KNITWEAR LTD., 进度 = 15%
+
+
+【命令 6】📊 所有供应商订单统计总览
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PGPASSWORD=postgres123 psql -h 121.43.124.134 -p 5432 -U logistics -d logistics -c "
+SELECT 
+  supplier_name,
+  COUNT(*) AS order_count,
+  ROUND(AVG(process_percent), 2) AS avg_progress
+FROM orders
+GROUP BY supplier_name
+ORDER BY order_count DESC;
+"
+
+期望结果：
+- BANGLADESH APPAREL GROUP: 130 条
+- INDIA FABRICS PVT.: 122 条
+- RIPON KNITWEAR LTD.: 57 条
+- TURKEY CLOTHING INC.: 39 条
+
+
+【命令 7】📈 整体订单进度分布（全局统计）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PGPASSWORD=postgres123 psql -h 121.43.124.134 -p 5432 -U logistics -d logistics -c "
+SELECT 
+  CASE 
+    WHEN process_percent < 30 THEN '低进度(<30%)'
+    WHEN process_percent BETWEEN 30 AND 80 THEN '中等进度(30-80%)'
+    ELSE '高进度(>80%)'
+  END AS progress_range,
+  COUNT(*) AS order_count,
+  ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM orders), 2) AS percentage
+FROM orders
+GROUP BY 
+  CASE 
+    WHEN process_percent < 30 THEN '低进度(<30%)'
+    WHEN process_percent BETWEEN 30 AND 80 THEN '中等进度(30-80%)'
+    ELSE '高进度(>80%)'
+  END
+ORDER BY order_count DESC;
+"
+
+
+【命令 8】🔍 验证数据库字段描述（展示优化后的效果）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PGPASSWORD=postgres123 psql -h 121.43.124.134 -p 5432 -U logistics -d logistics -c "\d+ orders"
+
+期望结果：每个字段都有 Description 列，显示中文业务含义
+
+
+【命令 9】🚢 查询从上海发往欧洲的货物（JSONB 查询示例）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PGPASSWORD=postgres123 psql -h 121.43.124.134 -p 5432 -U logistics -d logistics -c "
+SELECT 
+  o.order_number,
+  o.supplier_name,
+  od.payload->>'pol' AS origin_port,
+  od.payload->>'pod' AS destination_port,
+  od.payload->>'destination_country' AS destination_country
+FROM orders o
+JOIN order_details od ON o.id = od.order_id
+WHERE od.tab_name = 'Location'
+  AND (od.payload->>'pol' ILIKE '%Shanghai%' OR od.payload->>'pol' ILIKE '%Shenzhen%')
+  AND od.payload->>'destination_country' IN ('UK', 'Germany', 'France', 'Netherlands')
+ORDER BY o.order_number
+LIMIT 20;
+"
+
+
+【命令 10】⚠️ 风险订单识别（HOD已过且进度<50%）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PGPASSWORD=postgres123 psql -h 121.43.124.134 -p 5432 -U logistics -d logistics -c "
+SELECT 
+  order_number,
+  supplier_name,
+  process_percent,
+  hod_date,
+  CURRENT_DATE - hod_date AS days_overdue
+FROM orders
+WHERE hod_date < CURRENT_DATE 
+  AND process_percent < 50
+ORDER BY hod_date
+LIMIT 20;
+"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 录制视频建议流程
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1️⃣ 开场：展示问题（AI 之前的错误）
+   - 展示之前 AI 返回的错误结果（如连续订单号 001-020）
+
+2️⃣ 解决方案：展示优化后的提示词
+   - cat /root/COMPACT_PROMPT_WITH_COMMENTS.txt
+   - 强调关键点：字段描述、PostgreSQL 语法、输出格式
+
+3️⃣ 陷阱题测试：验证 AI 不会编造数据
+   - 问 AI："查询订单号 ORD00009999_99"
+   - AI 应该返回"未找到"
+   - 运行【命令 1】验证（0 rows）
+
+4️⃣ 关键测试：RIPON KNITWEAR LTD.
+   - 问 AI："查询 RIPON KNITWEAR LTD. 的所有订单"
+   - AI 应该返回 57 条
+   - 运行【命令 3】和【命令 4】验证
+
+5️⃣ 统计分析：BANGLADESH APPAREL GROUP
+   - 问 AI："统计 BANGLADESH APPAREL GROUP 的订单情况"
+   - AI 应该返回 130 条，平均进度 50.46%
+   - 运行【命令 2】验证
+
+6️⃣ 高级查询：JSONB + 复杂条件
+   - 问 AI："查询从上海发往欧洲的货物"
+   - 运行【命令 9】验证结果
+
+7️⃣ 展示字段描述
+   - 运行【命令 8】展示数据库的字段描述
+   - 说明这帮助 AI 理解业务含义
+
+8️⃣ 总结：成功标准
+   - ✅ 陷阱题正确（不编造数据）
+   - ✅ 关键数字准确（57, 130, 39 条）
+   - ✅ SQL 语法正确（无反引号）
+   - ✅ 业务洞察有深度
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 录制技巧
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- 准备两个终端：一个给 AI 对话，一个运行验证命令
+- 使用分屏显示：左边 AI 输出，右边数据库验证
+- 高亮关键数字：57、130、39、50.46%
+- 对比前后：展示优化前（错误）和优化后（正确）的差异
+- 强调价值：节省开发时间、提高准确性、支持业务决策
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+

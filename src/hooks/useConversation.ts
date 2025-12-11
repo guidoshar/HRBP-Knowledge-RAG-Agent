@@ -3,12 +3,7 @@
 // ============================================================
 
 import { useState, useCallback } from 'react';
-import {
-  ShipmentDetail,
-  BatchQueryResult,
-  SuggestedAction,
-} from '@/utils/mockData';
-import { processQuery, processAction, QueryResponse } from '@/utils/intentDetection';
+import { ShipmentDetail, BatchQueryResult, SuggestedAction } from '@/utils/mockData';
 
 // 对话消息类型
 export interface Message {
@@ -45,9 +40,19 @@ function generateId(): string {
   return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-// 模拟AI思考延迟
-function simulateThinkingDelay(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000));
+async function callChatBackend(query: string) {
+  const response = await fetch('/api/dify-chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw new Error(errorBody?.message || '调用后端失败，请稍后重试');
+  }
+
+  return response.json();
 }
 
 export function useConversation(): UseConversationReturn {
@@ -62,7 +67,6 @@ export function useConversation(): UseConversationReturn {
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
 
-    // 添加用户消息
     const userMessage: Message = {
       id: generateId(),
       role: 'user',
@@ -76,63 +80,51 @@ export function useConversation(): UseConversationReturn {
       isLoading: true,
     }));
 
-    // 模拟AI思考
-    await simulateThinkingDelay();
+    try {
+      const result = await callChatBackend(content.trim());
 
-    // 处理查询
-    const response: QueryResponse = processQuery(content);
+      const assistantMessage: Message = {
+        id: generateId(),
+        role: 'assistant',
+        content: result.content || '后端未返回内容',
+        timestamp: new Date(),
+        data: result.data,
+        suggestedActions: result.suggestedActions,
+        responseType: result.responseType || 'action_response',
+      };
 
-    // 创建AI响应消息
-    const assistantMessage: Message = {
-      id: generateId(),
-      role: 'assistant',
-      content: response.content,
-      timestamp: new Date(),
-      data: response.data,
-      suggestedActions: response.suggestedActions,
-      responseType: response.type,
-    };
+      setState((prev) => ({
+        ...prev,
+        messages: [...prev.messages, assistantMessage],
+        isLoading: false,
+        currentContext: result.data,
+        conversationStage: prev.conversationStage + 1,
+      }));
+    } catch (error: any) {
+      const assistantMessage: Message = {
+        id: generateId(),
+        role: 'assistant',
+        content: `❌ 出错了：${error?.message || '未知错误'}`,
+        timestamp: new Date(),
+        responseType: 'error',
+      };
 
-    setState((prev) => ({
-      ...prev,
-      messages: [...prev.messages, assistantMessage],
-      isLoading: false,
-      currentContext: response.data,
-      conversationStage: prev.conversationStage + 1,
-    }));
+      setState((prev) => ({
+        ...prev,
+        messages: [...prev.messages, assistantMessage],
+        isLoading: false,
+      }));
+    }
   }, []);
 
   // 处理建议操作
-  const handleAction = useCallback(async (action: string) => {
-    // 添加用户操作消息（可选，可以不显示）
-    setState((prev) => ({
-      ...prev,
-      isLoading: true,
-    }));
-
-    // 模拟处理延迟
-    await simulateThinkingDelay();
-
-    // 处理动作
-    const response = processAction(action, state.currentContext);
-
-    // 创建AI响应消息
-    const assistantMessage: Message = {
-      id: generateId(),
-      role: 'assistant',
-      content: response.content,
-      timestamp: new Date(),
-      suggestedActions: response.suggestedActions,
-      responseType: response.type,
-    };
-
-    setState((prev) => ({
-      ...prev,
-      messages: [...prev.messages, assistantMessage],
-      isLoading: false,
-      conversationStage: prev.conversationStage + 1,
-    }));
-  }, [state.currentContext]);
+  const handleAction = useCallback(
+    async (action: string) => {
+      // 简单复用同一后端接口，未来可扩展到特定动作
+      await sendMessage(action);
+    },
+    [sendMessage]
+  );
 
   // 重置对话
   const resetConversation = useCallback(() => {
