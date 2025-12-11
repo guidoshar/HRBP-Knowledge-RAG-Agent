@@ -70,20 +70,32 @@ async function callDifyChat(query: string, conversationId?: string) {
     body.conversation_id = conversationId;
   }
 
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${DIFY_API_KEY}`,
-    },
-    body: JSON.stringify(body),
-    cache: 'no-store',
-  });
+  let resp: Response;
+  try {
+    resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${DIFY_API_KEY}`,
+      },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+    });
+  } catch (fetchError: any) {
+    // 捕获网络错误（fetch-failed）
+    throw new Error(`网络请求失败: ${fetchError?.message || '无法连接到 Dify API，请检查网络连接和 API Key 是否正确'}`);
+  }
 
   if (!resp.ok) {
-    const errorData = await resp.json().catch(() => ({}));
-    const message = errorData?.message || errorData?.error || 'Dify 对话调用失败';
-    throw new Error(message);
+    let errorMessage = 'Dify 对话调用失败';
+    try {
+      const errorData = await resp.json();
+      errorMessage = errorData?.message || errorData?.error?.message || errorData?.error || `HTTP ${resp.status}: ${resp.statusText}`;
+    } catch (e) {
+      // 如果无法解析 JSON，使用状态码
+      errorMessage = `HTTP ${resp.status}: ${resp.statusText}`;
+    }
+    throw new Error(errorMessage);
   }
 
   // 处理流式响应 (Server-Sent Events)
