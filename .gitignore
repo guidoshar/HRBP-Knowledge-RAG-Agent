@@ -31,3 +31,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+order_number | supplier_name | origin_po
+planet_test.html

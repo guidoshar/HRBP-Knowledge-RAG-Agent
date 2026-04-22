@@ -1,159 +1,113 @@
-# MOOV AI 智能物流查询系统 Demo v2.0
+# SharkNinja HRBP 智能问答平台
 
-一个现代化的物流AI查询系统Demo页面，为MOOV国际物流公司设计的AI智能查询助手。
+> 企业级 HR Business Partner 智能助手 — 基于 Azure GPT-5 + HR_Policy 知识库 + RBAC 权限体系
 
-## 🚀 功能特点
+---
 
-### 核心功能
-- **智能意图识别**：自动识别PO单号查询、客户查询、目的地查询、状态查询
-- **两种查询场景**：
-  - 📦 **单订单查询**：详细展示货物信息、运输轨迹、文档状态
-  - 📊 **批量查询**：展示订单列表、状态分布饼图、趋势柱状图
-- **多轮对话支持**：AI主动引导后续问题，建议操作按钮
-- **AI流式输出**：打字机效果，逐字显示回答
+## 功能概览
 
-### 数据可视化
-- 📈 状态分布饼图（Recharts）
-- 📊 订单趋势柱状图
-- 🛤️ 运输时间轴
-- 📶 进度条动画
-- 🎴 信息卡片网格
+| 模块 | 说明 |
+|------|------|
+| **JWT 鉴权** | HS256 签名 · httpOnly Cookie · 8h 会话 · iss/aud/jti 完整声明 |
+| **RBAC 角色** | 管理员 / HRBP Manager / 普通员工 三级权限 |
+| **Azure GPT-5** | 无 `temperature` 参数，`max_completion_tokens` 控制输出 |
+| **RAG 检索** | `mammoth` 解析 HR_Policy DOCX → 关键词分块检索 → 注入 System Prompt |
+| **6 个快速体验卡片** | 员工福利、请假制度、差旅报销、入职流程、离职手续、绩效评估（全 Mock 富媒体） |
+| **FAB Agent** | 浮动 AI 聊天窗口，唯一真实调用 Azure OpenAI 的入口 |
 
-### 交互体验
-- 流畅的Framer Motion动画
-- 毛玻璃效果（Glassmorphism）
-- 响应式设计，移动端友好
-- 深色模式，上海夜景背景
+---
 
-## 🛠️ 技术栈
+## 技术栈
 
-- **框架**: Next.js 14 + React 18
-- **语言**: TypeScript
-- **样式**: Tailwind CSS
-- **动画**: Framer Motion
-- **图表**: Recharts
-- **Markdown渲染**: react-markdown
-- **图标**: Lucide React
+- **框架**: Next.js 16 (App Router + Turbopack)
+- **语言**: TypeScript 5
+- **UI 组件**: HeroUI v3 + Tailwind CSS v4
+- **动画**: Framer Motion 12
+- **图标**: Font Awesome 6
+- **JWT**: `jose`（标准声明）
+- **文档解析**: `mammoth`（DOCX → 纯文本）
+- **AI**: Azure OpenAI GPT-5（无 temperature）
+- **Markdown 渲染**: `react-markdown` + `remark-gfm`
 
-## 📦 安装与运行
+---
+
+## 快速开始
 
 ```bash
-# 安装依赖
+# 1. 克隆仓库
+git clone https://github.com/guidoshar/HRBP-Knowledge-RAG-Agent.git
+cd HRBP-Knowledge-RAG-Agent
+
+# 2. 安装依赖
 npm install
 
-# 启动开发服务器
+# 3. 配置环境变量
+cp .env.example .env.local
+# 编辑 .env.local，填入 Azure OpenAI 凭证 和 JWT_SECRET
+
+# 4. 启动开发服务器
 npm run dev
 
-# 构建生产版本
-npm run build
-
-# 启动生产服务器
-npm run start
+# 5. 构建生产版本
+npm run build && npm start
 ```
 
-## 🎯 使用示例
+---
 
-### 场景1：查询PO单号
-```
-输入：PO#12345
-输入：12345
-输入：查询订单12345的状态
-```
+## 环境变量
 
-### 场景2：客户批量查询
-```
-输入：Nike的所有订单
-输入：查看Adidas的货物
-```
+| 变量名 | 说明 | 必填 |
+|--------|------|------|
+| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI 资源端点（不含末尾 `/`） | ✅ |
+| `AZURE_OPENAI_API_KEY` | Azure API 密钥 | ✅ |
+| `AZURE_OPENAI_DEPLOYMENT` | 部署名称，默认 `gpt-5` | ✅ |
+| `AZURE_OPENAI_API_VERSION` | API 版本，默认 `2025-01-01-preview` | ✅ |
+| `JWT_SECRET` | 至少 32 字符随机字符串，用于 JWT 签名 | ✅ |
 
-### 场景3：目的地查询
-```
-输入：发往洛杉矶的货物
-输入：纽约的订单
-```
+> `.env.local` 已在 `.gitignore` 中，不会被提交到代码仓库。
 
-### 场景4：状态查询
-```
-输入：哪些订单延误了？
-输入：延误的货物
-```
+---
 
-## 📁 项目结构
+## 项目结构
 
 ```
 src/
 ├── app/
-│   ├── layout.tsx           # 根布局
-│   └── page.tsx             # 主页面
+│   ├── api/
+│   │   ├── auth/login/       # JWT 登录接口
+│   │   ├── auth/logout/      # 登出接口
+│   │   ├── auth/me/          # 当前用户接口
+│   │   └── hr-chat/          # Azure GPT-5 RAG 问答接口
+│   ├── login/                # 登录页
+│   ├── layout.tsx            # 根布局（FABAgent 挂载点）
+│   └── page.tsx              # 主仪表板
 ├── components/
-│   ├── Header.tsx           # 顶部导航
-│   ├── Hero.tsx             # 主查询区（整合组件）
-│   ├── QueryInput.tsx       # 输入框组件
-│   ├── AIResponse.tsx       # AI回答区域（多轮对话）
-│   ├── LoadingAnimation.tsx # 加载动画
-│   ├── ShipmentDetail.tsx   # 单订单详情（含时间轴）
-│   ├── BatchQueryResult.tsx # 批量查询结果
-│   ├── QuickExamples.tsx    # 快捷示例
-│   ├── SuggestedActions.tsx # 建议操作按钮
-│   └── charts/
-│       ├── PieChart.tsx     # 状态饼图
-│       └── BarChart.tsx     # 趋势柱状图
-├── hooks/
-│   └── useConversation.ts   # 对话状态管理
-├── utils/
-│   ├── mockData.ts          # 完整Mock数据
-│   ├── intentDetection.ts   # 智能意图识别
-│   └── typewriter.ts        # 打字机效果工具
-└── styles/
-    └── globals.css          # 全局样式
+│   ├── HRBPHeader.tsx        # 导航栏（含用户信息/退出）
+│   ├── HeroSection.tsx       # 首屏搜索区
+│   ├── QuickExperienceCards.tsx  # 6 个 HR 场景卡片
+│   └── FABAgent.tsx          # 浮动 AI 聊天窗口
+├── lib/
+│   ├── auth.ts               # JWT 签发/验证 + RBAC mock 用户
+│   └── hrKnowledge.ts        # DOCX 解析 + RAG 关键词检索
+├── middleware.ts             # 路由守卫（JWT 验证）
+├── styles/globals.css        # 全局样式 + Markdown 富文本样式
+└── utils/
+    └── hrMockData.ts         # 6 张卡片 Mock 富媒体内容
+HR_policy/                    # HR 政策 DOCX 知识库文件
+public/                       # Logo 等静态资源
 ```
-
-## 🎨 设计亮点
-
-### 视觉风格
-- 现代简约，科技感十足
-- 深色模式 + 渐变色彩
-- 毛玻璃效果（Glassmorphism）
-
-### 配色方案
-- 主色：深蓝 (#1e40af) + 科技蓝 (#3b82f6)
-- 辅助色：蓝紫渐变 (#3b82f6 → #8b5cf6)
-- 状态色：
-  - 运输中：蓝色
-  - 延误：橙色
-  - 已到达：绿色
-  - 待发货：灰色
-
-### 动画效果
-- 页面加载淡入
-- 输入框聚焦发光
-- AI打字机效果
-- 数字滚动动画
-- 图表展开动画
-- 卡片悬浮效果
-
-## 🔧 自定义配置
-
-### 添加新的Mock订单
-编辑 `src/utils/mockData.ts` 中的 `mockShipmentDetails` 对象
-
-### 添加新的查询意图
-编辑 `src/utils/intentDetection.ts` 中的 `detectQueryIntent` 函数
-
-### 修改样式主题
-- 颜色变量在 `tailwind.config.js`
-- 全局样式在 `src/styles/globals.css`
-
-## 📱 响应式断点
-
-- **PC端 (>1024px)**: 完整布局，双列图表
-- **平板端 (768-1024px)**: 单列图表
-- **移动端 (<768px)**: 全宽显示，紧凑布局
-
-## 📄 License
-
-MIT License
 
 ---
 
-Made with ❤️ for MOOV International Logistics
+## 安全说明
+
+- API 密钥仅在服务端读取，**绝不暴露到前端**
+- JWT 存储于 `httpOnly` Cookie，JavaScript 无法访问
+- 所有非公开路由经 Next.js Middleware 强制 JWT 校验
+- 生产环境请替换 `JWT_SECRET` 为随机强密码
+
+---
+
+## License
+
+Apache-2.0 © 2026 SharkNinja
