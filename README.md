@@ -1,37 +1,103 @@
 # SharkNinja HRBP 智能问答平台
 
-> 企业级 HR Business Partner 智能助手 — 基于 Azure GPT-5 + HR_Policy 知识库 + RBAC 权限体系
+> 基于 Microsoft 企业生态的新一代 HR Business Partner 智能助手
+
+[![Azure Entra ID](https://img.shields.io/badge/Azure%20Entra%20ID-SSO-0078D4?logo=microsoftazure)](https://learn.microsoft.com/en-us/entra/identity/)
+[![Azure AI Foundry](https://img.shields.io/badge/Azure%20AI%20Foundry-GPT--5-0078D4?logo=microsoftazure)](https://ai.azure.com/)
+[![Azure AI Search](https://img.shields.io/badge/Azure%20AI%20Search-Vector%20RAG-0078D4?logo=microsoftazure)](https://azure.microsoft.com/en-us/products/ai-services/ai-search/)
+[![SharePoint](https://img.shields.io/badge/SharePoint-Knowledge%20Base-0078D4?logo=microsoftsharepoint)](https://www.microsoft.com/en-us/microsoft-365/sharepoint/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
 
 ---
 
-## 功能概览
+## 架构概览
 
-| 模块 | 说明 |
-|------|------|
-| **JWT 鉴权** | HS256 签名 · httpOnly Cookie · 8h 会话 · iss/aud/jti 完整声明 |
-| **RBAC 角色** | 管理员 / HRBP Manager / 普通员工 三级权限 |
-| **Azure GPT-5** | 无 `temperature` 参数，`max_completion_tokens` 控制输出 |
-| **RAG 检索** | `mammoth` 解析 HR_Policy DOCX → 关键词分块检索 → 注入 System Prompt |
-| **6 个快速体验卡片** | 员工福利、请假制度、差旅报销、入职流程、离职手续、绩效评估（全 Mock 富媒体） |
-| **FAB Agent** | 浮动 AI 聊天窗口，唯一真实调用 Azure OpenAI 的入口 |
+```
+┌─────────────────────────────────────────────────────┐
+│                 SharkNinja 企业网络                   │
+│                                                     │
+│  员工浏览器                                           │
+│     │                                               │
+│     ▼                                               │
+│  ┌──────────────┐     ┌──────────────────────────┐  │
+│  │  Next.js 16  │────▶│  Azure Entra ID (SSO)    │  │
+│  │  HRBP 平台   │     │  · OIDC / OAuth 2.0      │  │
+│  │              │     │  · RBAC 角色同步           │  │
+│  │              │     │  · 条件访问策略             │  │
+│  └──────┬───────┘     └──────────────────────────┘  │
+│         │                                           │
+│         ▼                                           │
+│  ┌──────────────────────────────────────────────┐   │
+│  │           Azure AI Foundry                   │   │
+│  │  · GPT-5 模型部署与编排                        │   │
+│  │  · Prompt Flow 工作流管理                      │   │
+│  │  · 安全内容过滤 (Content Filter)               │   │
+│  └──────────────────┬───────────────────────────┘   │
+│                     │                               │
+│         ┌───────────┘                               │
+│         ▼                                           │
+│  ┌──────────────────────────────────────────────┐   │
+│  │           Azure AI Search                    │   │
+│  │  · 向量检索 (Vector Search)                   │   │
+│  │  · 语义排名 (Semantic Ranker)                  │   │
+│  │  · 混合检索 (Hybrid Search)                   │   │
+│  └──────────────────┬───────────────────────────┘   │
+│                     │                               │
+│         ┌───────────┘                               │
+│         ▼                                           │
+│  ┌──────────────────────────────────────────────┐   │
+│  │     SharePoint Online / HR_Policy 文档库      │   │
+│  │  · HR 政策文档自动索引                          │   │
+│  │  · 基于 Entra ID 的文档级 RBAC 控制            │   │
+│  │  · 版本管理与审计日志                           │   │
+│  └──────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## 核心功能
+
+| 模块 | 技术 | 说明 |
+|------|------|------|
+| **统一身份认证** | Azure Entra ID | OIDC/OAuth 2.0 SSO · 条件访问 · MFA |
+| **RBAC 权限体系** | Entra ID + SharePoint | 管理员 / HRBP Manager / 普通员工 · 文档级访问控制 |
+| **AI 模型编排** | Azure AI Foundry | GPT-5 部署管理 · Prompt Flow · 内容安全过滤 |
+| **知识库检索** | Azure AI Search | 向量检索 + 语义排名 + 混合检索 · SharePoint 自动索引 |
+| **文档管理** | SharePoint Online | HR_Policy 文档库 · 版本控制 · 审计日志 |
+| **智能问答** | GPT-5 + RAG | 基于 HR 政策文档的精准问答，拒绝编造 |
+| **快速体验卡片** | Mock / 演示 | 6 个常见 HR 场景预览（福利、请假、差旅、入职、离职、绩效） |
+| **FAB Agent** | 实时对话 | 浮动 AI 聊天窗口，多轮对话，Markdown 富文本输出 |
 
 ---
 
 ## 技术栈
 
-- **框架**: Next.js 16 (App Router + Turbopack)
-- **语言**: TypeScript 5
-- **UI 组件**: HeroUI v3 + Tailwind CSS v4
-- **动画**: Framer Motion 12
-- **图标**: Font Awesome 6
-- **JWT**: `jose`（标准声明）
-- **文档解析**: `mammoth`（DOCX → 纯文本）
-- **AI**: Azure OpenAI GPT-5（无 temperature）
-- **Markdown 渲染**: `react-markdown` + `remark-gfm`
+### 后端 / 云服务
+
+| 服务 | 用途 |
+|------|------|
+| **Azure Entra ID** | SSO 统一登录 · RBAC 角色同步 · 条件访问策略 |
+| **Azure AI Foundry** | GPT-5 模型编排 · Prompt Flow · 部署管理 |
+| **Azure AI Search** | HR 知识库向量索引 · 语义检索 · 混合排名 |
+| **SharePoint Online** | HR_Policy 文档库 · 自动索引触发器 |
+| **Microsoft Graph API** | 用户档案 · 组织结构 · 权限查询 |
+
+### 前端应用
+
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| **Next.js** | 16 | App Router · Turbopack · Middleware SSO Guard |
+| **TypeScript** | 5 | 全量类型安全 |
+| **HeroUI** | v3 | 企业级 UI 组件库 |
+| **Tailwind CSS** | v4 | 原子化 CSS · CSS-first 配置 |
+| **Framer Motion** | 12 | 流畅动画 |
+| **Font Awesome** | 6 | 图标库 |
+| **react-markdown** | 10 | Markdown 富文本渲染（含表格） |
 
 ---
 
-## 快速开始
+## 快速开始（本地开发）
 
 ```bash
 # 1. 克隆仓库
@@ -43,12 +109,12 @@ npm install
 
 # 3. 配置环境变量
 cp .env.example .env.local
-# 编辑 .env.local，填入 Azure OpenAI 凭证 和 JWT_SECRET
+# 编辑 .env.local，填入 Azure 服务凭证
 
 # 4. 启动开发服务器
 npm run dev
 
-# 5. 构建生产版本
+# 5. 生产构建
 npm run build && npm start
 ```
 
@@ -56,15 +122,29 @@ npm run build && npm start
 
 ## 环境变量
 
-| 变量名 | 说明 | 必填 |
-|--------|------|------|
-| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI 资源端点（不含末尾 `/`） | ✅ |
-| `AZURE_OPENAI_API_KEY` | Azure API 密钥 | ✅ |
-| `AZURE_OPENAI_DEPLOYMENT` | 部署名称，默认 `gpt-5` | ✅ |
-| `AZURE_OPENAI_API_VERSION` | API 版本，默认 `2025-01-01-preview` | ✅ |
-| `JWT_SECRET` | 至少 32 字符随机字符串，用于 JWT 签名 | ✅ |
+| 变量名 | 说明 | 对应服务 |
+|--------|------|----------|
+| `AZURE_OPENAI_ENDPOINT` | Azure AI Foundry 端点 URL | Azure AI Foundry |
+| `AZURE_OPENAI_API_KEY` | API 访问密钥 | Azure AI Foundry |
+| `AZURE_OPENAI_DEPLOYMENT` | 模型部署名称（如 `gpt-5`） | Azure AI Foundry |
+| `AZURE_OPENAI_API_VERSION` | API 版本（如 `2025-01-01-preview`） | Azure AI Foundry |
+| `JWT_SECRET` | 本地开发 JWT 签名密钥（≥32字符） | 本地鉴权 |
 
-> `.env.local` 已在 `.gitignore` 中，不会被提交到代码仓库。
+> **生产环境**：使用 Azure Entra ID OIDC 替换 JWT，通过 `@azure/msal-node` 接入 SSO，无需 `JWT_SECRET`。
+
+---
+
+## 生产部署路径（Road to Production）
+
+```
+现状（Demo）                    生产目标
+─────────────────────           ──────────────────────────────
+Mock JWT 鉴权          ──▶     Azure Entra ID OIDC / MSAL
+本地 DOCX 关键词检索    ──▶     Azure AI Search 向量 + 语义检索
+本地文件知识库          ──▶     SharePoint Online 文档库自动索引
+直连 Azure OpenAI      ──▶     Azure AI Foundry Prompt Flow 编排
+硬编码 RBAC            ──▶     Entra ID 安全组 + SharePoint 权限继承
+```
 
 ---
 
@@ -74,37 +154,38 @@ npm run build && npm start
 src/
 ├── app/
 │   ├── api/
-│   │   ├── auth/login/       # JWT 登录接口
-│   │   ├── auth/logout/      # 登出接口
-│   │   ├── auth/me/          # 当前用户接口
-│   │   └── hr-chat/          # Azure GPT-5 RAG 问答接口
-│   ├── login/                # 登录页
-│   ├── layout.tsx            # 根布局（FABAgent 挂载点）
-│   └── page.tsx              # 主仪表板
+│   │   ├── auth/login/           # 本地 JWT 登录（Demo）
+│   │   ├── auth/logout/          # 登出
+│   │   ├── auth/me/              # 当前用户信息
+│   │   └── hr-chat/              # Azure AI Foundry RAG 问答
+│   ├── login/                    # 登录页（Entra ID SSO 入口）
+│   ├── layout.tsx                # 根布局
+│   └── page.tsx                  # 主仪表板
 ├── components/
-│   ├── HRBPHeader.tsx        # 导航栏（含用户信息/退出）
-│   ├── HeroSection.tsx       # 首屏搜索区
+│   ├── HRBPHeader.tsx            # 导航（用户信息 / 退出）
+│   ├── HeroSection.tsx           # 首屏智能搜索
 │   ├── QuickExperienceCards.tsx  # 6 个 HR 场景卡片
-│   └── FABAgent.tsx          # 浮动 AI 聊天窗口
+│   └── FABAgent.tsx              # 浮动 AI 聊天窗口
 ├── lib/
-│   ├── auth.ts               # JWT 签发/验证 + RBAC mock 用户
-│   └── hrKnowledge.ts        # DOCX 解析 + RAG 关键词检索
-├── middleware.ts             # 路由守卫（JWT 验证）
-├── styles/globals.css        # 全局样式 + Markdown 富文本样式
+│   ├── auth.ts                   # JWT 签发/验证（Demo 阶段）
+│   └── hrKnowledge.ts            # RAG 检索（→ Azure AI Search）
+├── middleware.ts                 # 路由守卫（→ Entra ID 中间件）
+├── styles/globals.css            # 全局样式 + 富文本 Markdown
 └── utils/
-    └── hrMockData.ts         # 6 张卡片 Mock 富媒体内容
-HR_policy/                    # HR 政策 DOCX 知识库文件
-public/                       # Logo 等静态资源
+    └── hrMockData.ts             # Mock 演示数据
+HR_policy/                        # HR 政策文档（→ SharePoint 索引源）
+public/                           # 静态资源（Logo 等）
 ```
 
 ---
 
 ## 安全说明
 
-- API 密钥仅在服务端读取，**绝不暴露到前端**
-- JWT 存储于 `httpOnly` Cookie，JavaScript 无法访问
-- 所有非公开路由经 Next.js Middleware 强制 JWT 校验
-- 生产环境请替换 `JWT_SECRET` 为随机强密码
+- **API 密钥**：仅在服务端 `process.env` 读取，不暴露到前端
+- **Cookie**：`httpOnly: true` · `sameSite: lax` · 生产启用 `secure: true`
+- **RBAC**：生产环境通过 Entra ID 安全组控制，不依赖前端逻辑
+- **内容安全**：Azure AI Foundry 内置 Content Filter，防止有害输出
+- **审计**：SharePoint 文档操作 + Azure Monitor 全链路日志
 
 ---
 

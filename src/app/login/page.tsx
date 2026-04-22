@@ -4,7 +4,7 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faLock, faShield, faRobot } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faLock, faShield, faRobot, faCloud, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -59,14 +59,15 @@ export default function LoginPage() {
               <span className="gradient-text-orange">智能问答平台</span>
             </h1>
             <p className="text-sm text-white/50 leading-relaxed">
-              企业级人力资源智能助手，基于 Azure GPT-5 与 HR_Policy 知识库，为员工提供专业、快速的 HR 政策查询服务。
+              基于 Microsoft 企业生态的新一代 HR 智能助手，通过 Azure Entra ID SSO 统一身份认证，连接 SharePoint 文档库与 Azure AI Foundry。
             </p>
 
             <div className="mt-10 space-y-4">
               {[
-                { icon: faShield, title: '标准 JWT 鉴权',    desc: 'HS256 · httpOnly Cookie · 8h 会话' },
-                { icon: faRobot,  title: 'Azure GPT-5 驱动', desc: '接入 HR_Policy 知识库 RAG 检索' },
-                { icon: faLock,   title: 'RBAC 角色权限',    desc: '管理员 / HRBP / 员工三级权限体系' },
+                { icon: faShield,          title: 'Azure Entra ID SSO',    desc: '企业统一身份认证 · RBAC 角色同步 · 条件访问策略' },
+                { icon: faCloud,           title: 'Microsoft Foundry',      desc: 'Azure AI Foundry 模型编排 · GPT-5 部署管理' },
+                { icon: faMagnifyingGlass, title: 'Azure AI Search',        desc: '向量检索 + 语义排名 · SharePoint 知识库索引' },
+                { icon: faRobot,           title: 'SharePoint / RBAC',      desc: 'HR_Policy 文档库集成 · 基于角色的内容访问控制' },
               ].map(item => (
                 <div key={item.title} className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-orange-500/15 border border-orange-500/20 flex items-center justify-center shrink-0 mt-0.5">
@@ -82,7 +83,7 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-10 text-xs text-white/20 leading-relaxed">
-            如需获取账号，请联系所在部门 HR Business Partner 或 IT 管理员。
+            使用您的企业 Microsoft 账号 (xxx@sharkninja.com) 登录。如需权限，请联系 IT 管理员或 HRBP。
           </p>
         </motion.div>
 
@@ -93,8 +94,8 @@ export default function LoginPage() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="p-10 bg-[#111111] flex flex-col justify-center"
         >
-          <h2 className="text-2xl font-bold text-white mb-2">欢迎登录</h2>
-          <p className="text-sm text-white/40 mb-8">请输入您的企业账号凭证</p>
+          <h2 className="text-2xl font-bold text-white mb-2">企业账号登录</h2>
+          <p className="text-sm text-white/40 mb-8">使用 Microsoft 企业账号凭证登录</p>
 
           <form onSubmit={onSubmit} className="space-y-5">
             {/* Username */}
@@ -159,9 +160,25 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-10 pt-6 border-t border-white/[0.05]">
+          <div className="mt-10 pt-6 border-t border-white/[0.05] space-y-3">
+            {/* Microsoft SSO hint */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-white/[0.06]" />
+              <span className="text-xs text-white/20 shrink-0">企业 SSO</span>
+              <div className="flex-1 h-px bg-white/[0.06]" />
+            </div>
+            <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+              {/* Microsoft logo mark */}
+              <svg width="16" height="16" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+                <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
+                <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
+                <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
+              </svg>
+              <span className="text-xs text-white/30">通过 Azure Entra ID 统一身份认证</span>
+            </div>
             <p className="text-xs text-white/20 text-center">
-              遇到登录问题？请联系 HR 或 IT 支持
+              遇到登录问题？请联系 IT 支持或 HRBP
             </p>
           </div>
         </motion.div>
