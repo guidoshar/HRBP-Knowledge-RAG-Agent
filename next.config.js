@@ -4,8 +4,8 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'guidoshar.com',
-        pathname: '/wp-content/uploads/**',
+        hostname: 'www.sharkninja.com',
+        pathname: '/**',
       },
     ],
   },

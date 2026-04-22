@@ -1,12 +1,11 @@
 import type { Metadata } from 'next';
 import '@/styles/globals.css';
-import DifyChatBubble from '@/components/DifyChatBubble';
-import MooVChatWidget from '@/components/MooVChatWidget';
+import FABAgent from '@/components/FABAgent';
 
 export const metadata: Metadata = {
-  title: 'MOOV AI - 智能物流查询系统',
-  description: 'MOOV国际物流AI智能查询助手，实时追踪全球货物动态',
-  keywords: ['物流', 'AI', '货物追踪', '国际物流', 'MOOV'],
+  title: 'SharkNinja HRBP 智能问答平台',
+  description: '基于 RBAC + Azure GPT-5 的 HR 政策智能问答平台',
+  keywords: ['SharkNinja', 'HRBP', 'RBAC', 'Azure GPT-5', 'HR Policy'],
 };
 
 export default function RootLayout({
@@ -26,8 +25,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         {children}
-        <DifyChatBubble />
-        <MooVChatWidget />
+        <FABAgent />
       </body>
     </html>
   );

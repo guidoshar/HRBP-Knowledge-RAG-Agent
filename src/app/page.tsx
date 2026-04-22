@@ -1,109 +1,28 @@
-'use client';
+import { cookies } from 'next/headers';
+import HRBPHeader from '@/components/HRBPHeader';
+import QuickExperienceCards from '@/components/QuickExperienceCards';
+import { verifyToken } from '@/lib/auth';
 
-import Image from 'next/image';
-import Header from '@/components/Header';
-import Hero from '@/components/Hero';
+export default async function Home() {
+  const token = (await cookies()).get('hrbp_token')?.value;
+  const user = token ? await verifyToken(token) : null;
 
-export default function Home() {
   return (
-    <main className="relative min-h-screen overflow-hidden">
-      {/* 背景图片 + 遮罩 */}
-      <div className="fixed inset-0 z-0">
-        {/* 上海夜景背景 */}
-        <Image
-          src="https://guidoshar.com/wp-content/uploads/2025/12/20230411175037_7394_0.jpg"
-          alt="Background"
-          fill
-          className="object-cover"
-          priority
-          quality={85}
-        />
-        
-        {/* 深色遮罩层 */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/80 to-black/90" />
-        
-        {/* 额外的渐变效果 */}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-dark/10 via-transparent to-accent-purple/10" />
-        
-        {/* 网格纹理（可选） */}
-        <div 
-          className="absolute inset-0 opacity-[0.02]"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: '50px 50px',
-          }}
-        />
-      </div>
+    <main className="min-h-screen bg-[#0f0f0f] text-white">
+      <HRBPHeader user={user ? { name: user.name, role: user.role, dept: user.dept } : null} />
 
-      {/* 内容层 */}
-      <div className="relative z-10">
-        {/* 顶部导航 */}
-        <Header />
+      <section className="max-w-6xl mx-auto px-4 pt-10 pb-4">
+        <div className="rounded-2xl border border-white/10 bg-gradient-to-r from-[#C8102E] to-[#57111d] p-8">
+          <p className="text-sm uppercase tracking-widest text-white/70 mb-2">SharkNinja HRBP Platform</p>
+          <h1 className="text-3xl md:text-4xl font-bold mb-3">AI 政策问答 + RBAC 快速体验</h1>
+          <p className="text-white/85 max-w-3xl">
+            当前平台已接入 Azure GPT-5 与 HR_Policy 知识库检索，主页下方六个弹窗均为全 Mock 富媒体演示，仅 FAB Agent 会调用 AI。
+          </p>
+        </div>
+      </section>
 
-        {/* 主内容区域 */}
-        <Hero />
-
-        {/* 页脚信息 */}
-        <footer className="relative py-8 text-center">
-          <div className="max-w-4xl mx-auto px-4">
-            <div className="glass-dark rounded-2xl p-6">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="text-sm text-gray-400">
-                  © 2024 MOOV International Logistics. All rights reserved.
-                </div>
-                <div className="flex items-center gap-4 text-sm">
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                    隐私政策
-                  </a>
-                  <span className="text-gray-600">|</span>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                    服务条款
-                  </a>
-                  <span className="text-gray-600">|</span>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                    联系我们
-                  </a>
-                </div>
-              </div>
-              
-              {/* Demo标识 */}
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                  Demo Version - 仅供演示
-                </span>
-              </div>
-            </div>
-          </div>
-        </footer>
-      </div>
-
-      {/* 装饰性粒子效果（可选） */}
-      <ParticleBackground />
+      <QuickExperienceCards />
     </main>
-  );
-}
-
-// 粒子背景效果
-function ParticleBackground() {
-  return (
-    <div className="fixed inset-0 z-[1] pointer-events-none overflow-hidden">
-      {[...Array(20)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute w-1 h-1 bg-primary/30 rounded-full"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animation: `float ${5 + Math.random() * 10}s ease-in-out infinite`,
-            animationDelay: `${Math.random() * 5}s`,
-          }}
-        />
-      ))}
-    </div>
   );
 }
 
